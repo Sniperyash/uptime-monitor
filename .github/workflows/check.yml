@@ -1,0 +1,41 @@
+name: Uptime check
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uptime-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check server and notify on change
+        env:
+          HOST: ${{ secrets.MON_HOST }}
+          PORT: "3389"
+          PANEL: my.thepowerhost.in
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          REMIND_SECS: "900"
+        run: bash check.sh
+
+      - name: Save state
+        run: |
+          git config user.name "uptime-bot"
+          git config user.email "uptime-bot@users.noreply.github.com"
+          # GitHub disables schedules on repos with no commits for 60 days.
+          if [ $(( $(date +%s) - $(git log -1 --format=%ct) )) -gt 2592000 ]; then
+            date -u +%FT%TZ > keepalive.txt
+          fi
+          git add state.txt
+          [ -f keepalive.txt ] && git add keepalive.txt
+          git diff --cached --quiet || { git commit -qm "Update state"; git push -q; }
