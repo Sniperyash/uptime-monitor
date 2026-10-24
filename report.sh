@@ -24,15 +24,23 @@ id=$(curl -s -m 15 -H "Accept: application/json" \
   "https://check-host.net/check-tcp?host=$HOST:3389&max_nodes=3" |
   python3 -I -c "import sys,json;print(json.load(sys.stdin)['request_id'])" 2>/dev/null)
 if [ -n "$id" ]; then
-  sleep 20
-  world=$(curl -s -m 15 -H "Accept: application/json" "https://check-host.net/check-result/$id" |
-    python3 -I -c '
+  # Nodes report null until their test finishes; poll for up to ~60s.
+  for wait in 1 2 3 4 5 6; do
+    sleep 10
+    res=$(curl -s -m 15 -H "Accept: application/json" "https://check-host.net/check-result/$id")
+    echo "$res" | grep -q null || break
+  done
+  world=$(echo "$res" | python3 -I -c '
 import sys, json
 out = []
 for node, r in json.load(sys.stdin).items():
     place = node.split(".")[0].upper()
-    ok = bool(r) and isinstance(r[0], dict) and "time" in r[0]
-    out.append(f"{place} {chr(0x2705) if ok else chr(0x274C)}")
+    if r is None:
+        out.append(f"{place} ?")
+    elif r and isinstance(r[0], dict) and "time" in r[0]:
+        out.append(f"{place} {chr(0x2705)}")
+    else:
+        out.append(f"{place} {chr(0x274C)}")
 print("  ".join(out))
 ' 2>/dev/null)
 fi
