@@ -7,5 +7,6 @@ while it stays down, and when it comes back.
 The server address and ntfy topic are repository secrets (`MON_HOST`, `NTFY_TOPIC`),
 so they are not visible in this repo or its logs.
 
-- Run a check now: Actions → Uptime check → Run workflow
+- Full report on demand (e.g. from the GitHub mobile app): Actions → Check now → Run workflow.
+  The report (server, provider panel, VNC console, other countries, verdict) arrives in ntfy.
 - Pause: Actions → Uptime check → ⋯ → Disable workflow

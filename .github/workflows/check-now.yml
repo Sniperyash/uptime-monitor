@@ -1,0 +1,17 @@
+name: Check now
+
+on:
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Full check and send report to ntfy
+        env:
+          HOST: ${{ secrets.MON_HOST }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: bash report.sh
